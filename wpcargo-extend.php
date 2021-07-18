@@ -12,6 +12,36 @@ if (!defined('ABSPATH')) {
 }
 
 
+/**
+ * Load assets file
+ */
+function footer_scripts() { ?>
+    <script type="text/javascript">
+        (function ($) {
+            $(document).ready(function () {
+                $(document).on('keyup', '#wpcfe-packages-repeater input', function(value) {
+                    var this$ = $(this);
+                    var tr$ = this$.closest('tr');
+
+                    var inputLength = tr$.find("input[name*='[wpc-pm-length]']").val();
+                    var inputWidth = tr$.find("input[name*='[wpc-pm-width]']").val();
+                    var inputHeight = tr$.find("input[name*='[wpc-pm-height]']").val();
+
+                    // Volume
+                    var volume = (inputLength * inputWidth * inputHeight) / 4000;
+                    tr$.find("input[name*='[tvolume]']").val(Math.floor(volume* 100) / 100);
+                    
+                    // Cubic
+                    var cubic = (inputLength * inputWidth * inputHeight) / 1000000;
+                    tr$.find("input[name*='[tkubikasi]']").val(Math.floor(cubic* 100) / 100);
+                });
+            });
+        })(jQuery);
+    </script>
+<?php }
+add_action( 'wp_footer', 'footer_scripts' );
+
+
 add_action( 'pre_get_posts', function( $q ) {
     if( $title = $q->get( '_meta_or_title' ) ) {
         add_filter( 'get_meta_sql', function( $sql ) use ( $title ) {
