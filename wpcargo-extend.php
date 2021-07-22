@@ -29,11 +29,11 @@ function footer_scripts() { ?>
 
                     // Volume
                     var volume = (inputLength * inputWidth * inputHeight) / 4000;
-                    tr$.find("input[name*='[tvolume]']").val(Math.floor(volume* 100) / 100);
+                    tr$.find("input[name*='[tvolume]']").val(Math.floor(volume* 1000) / 1000);
                     
                     // Cubic
                     var cubic = (inputLength * inputWidth * inputHeight) / 1000000;
-                    tr$.find("input[name*='[tkubikasi]']").val(Math.floor(cubic* 100) / 100);
+                    tr$.find("input[name*='[tkubikasi]']").val(Math.floor(cubic* 1000) / 1000);
                 });
             });
         })(jQuery);
