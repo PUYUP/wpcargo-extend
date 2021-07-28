@@ -19,10 +19,6 @@ function footer_scripts() { ?>
     <script type="text/javascript">
         (function ($) {
             $(document).ready(function () {
-                var inputLength = 10;
-                var inputWidth = 15;
-                var inputHeight = 5;
-
                 $(document).on('keyup', '#wpcfe-packages-repeater input', function(value) {
                     var this$ = $(this);
                     var tr$ = this$.closest('tr');
@@ -33,7 +29,7 @@ function footer_scripts() { ?>
 
                     // Volume
                     var volume = (inputLength * inputWidth * inputHeight) / 4000;
-                    tr$.find("input[name*='[tvolume]']").val(Math.round(volume* 10) / 10);
+                    tr$.find("input[name*='[tvolume]']").val(Math.round(volume* 1) / 1);
                     
                     // Cubic
                     var cubic = (inputLength * inputWidth * inputHeight) / 1000000;
