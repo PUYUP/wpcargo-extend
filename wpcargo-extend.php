@@ -342,10 +342,10 @@ function wpcargo_after_package_details_script_callback_extend( $shipment ){
 						totalCubic		+= currentQTY * currentCubicmetric;
 					});
 					$('#package-weight-info #total_volume_metric_output').text( totalVolume.toFixed(2) );
-					$('#package-weight-info #package_volumetric').text( totalVolumetric.toFixed(2) );
+					$('#package-weight-info #package_volumetric').text( Math.round(totalVolumetric.toFixed(2)) );
 					$('#package-weight-info #total_cubic_metric_output').text( totalCubic.toFixed(2) );
 					$('#package-weight-info #package_cubicmetric').text( totalCubicmetric.toFixed(2) );
-					$('#package-weight-info #package_actual_weight').text( totalWeight.toFixed(2) );
+					$('#package-weight-info #package_actual_weight').text( Math.ceil(totalWeight.toFixed(2)) );
 					$('#package-weight-info #package_actual_koli').text( totalQTY );
 				});
 			}
