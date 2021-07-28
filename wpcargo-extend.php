@@ -221,3 +221,135 @@ function wpcfe_dashboard_meta_query_extend( $meta_query ) {
 
     return $meta_query;
 }
+
+
+add_action( 'plugins_loaded', 'alter_wpcargo' );
+function alter_wpcargo() {
+    remove_action('wpcargo_after_package_totals', 'wpcargo_after_package_details_callback', 10, 1 );
+    remove_action('wpcargo_after_package_details_script', 'wpcargo_after_package_details_script_callback', 10, 1 );
+}
+
+
+add_action('wpcargo_after_package_totals', 'wpcargo_after_package_details_callback_extend', 10, 1 );
+function wpcargo_after_package_details_callback_extend( $shipment ){
+    $class = is_admin() ? 'one-third' : 'wpcargo-col-md-4' ;
+    $style = is_admin() ? 'style="display:block;overflow:hidden;margin-bottom:36px"' : '' ;
+	$shipment_id = (!empty ( $shipment ) ) ? $shipment->ID : '';
+	$package_volumetric = (!empty ( $shipment ) ) ? wpcargo_package_volumetric( $shipment->ID ) : '0';
+	$package_actual_weight = (!empty ( $shipment ) ) ? wpcargo_package_actual_weight( $shipment->ID ) : '0';
+	$package_cubicmetric = (!empty ( $shipment ) ) ? wpcargo_package_cubicmetric( $shipment->ID ) : '0.00';
+	$package_actual_weight = (!empty ( $shipment ) ) ? wpcargo_package_actual_weight( $shipment->ID ) : '0';
+	$package_actual_koli = (!empty ( $shipment ) ) ? wpcargo_package_actual_koli( $shipment->ID ) : '0';
+	?>
+	<div id="package-weight-info" class="table-responsive" <?php echo $style; ?>>
+		<table class="table table-hover table-sm">
+			<thead>
+				<tr class="text-center">
+					<th><?php echo apply_filters( 'wpcargo_package_actual_koli_label', esc_html__('Koli', 'wpcargo') ); ?></th>
+					<th><?php echo apply_filters( 'wpcargo_package_actual_weight_label', esc_html__('Berat', 'wpcargo') ); ?></th>
+					<th><?php echo apply_filters( 'wpcargo_package_cubicmetric_label', esc_html__('Kubikasi', 'wpcargo') ); ?></th>
+					<th><?php echo apply_filters( 'wpcargo_package_volumetric_label', esc_html__('Volume', 'wpcargo') ); ?></th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr class="text-center">
+					<td><span id="package_actual_koli"><?php echo $package_actual_koli; ?></span></td>
+					<td><span id="package_actual_weight"><?php echo $package_actual_weight.'</span> '.wpcargo_package_settings()->weight_unit; ?></td>
+					<td><span id="package_cubicmetric"><?php echo $package_cubicmetric.'</span> '.wpcargo_package_settings()->weight_unit; ?></td>
+					<td><span id="package_volumetric"><?php echo $package_volumetric.'</span> '.wpcargo_package_settings()->weight_unit; ?></td>
+				<tr>
+			</tbody>
+			<?php do_action('wpcargo_after_package_totals_section', $shipment_id); ?>
+		</table>
+	</div>
+	<?php
+	do_action('wpcargo_after_package_details_script', $shipment);
+}
+
+
+add_action('wpcargo_after_package_details_script', 'wpcargo_after_package_details_script_callback_extend', 10, 1 );
+function wpcargo_after_package_details_script_callback_extend( $shipment ){
+	$dim_meta   = wpcargo_package_dim_meta();
+	$qty_meta   = wpcargo_package_qty_meta();
+	$weight_meta = wpcargo_package_weight_meta();
+	$divisor    = wpcargo_package_settings()->divisor ? wpcargo_package_settings()->divisor : 1;
+	$divisor_cubic    = wpcargo_package_settings()->divisor_cubic ? wpcargo_package_settings()->divisor_cubic : 1;
+	$dim_meta   = json_encode( $dim_meta );
+	?>
+	<script>
+		var mainContainer   = 'table tbody[data-repeater-list="<?php echo WPCARGO_PACKAGE_POSTMETA; ?>"]';
+		var divisor         = <?php echo $divisor ?>;
+		var divisor_cubic         = <?php echo $divisor_cubic ?>;
+		var dimMeta         = <?php echo $dim_meta; ?>;
+		var qtyMeta         = "<?php echo $qty_meta; ?>";
+		var weightMeta      = "<?php echo $weight_meta; ?>";    
+		jQuery(document).ready(function($){
+			if( mainContainer.length > 0 ){
+				$( mainContainer ).on( 'change keyup', 'input', function(){
+					var totalQTY        = 0;
+					var totalWeight     = 0;
+					var totalVolumetric = 0;
+					var totalVolume		= 0;
+					var totalCubicmetric = 0;
+					var totalCubic		= 0;
+				 
+					$( mainContainer + ' tr' ).each(function(){
+						var currentVolumetric = 1; 
+						var currentCubicmetric = 1;
+						var currentQTY        = 0;
+						var packageWeight     = 0;
+						$(this).find('input').each(function(){
+							var currentField    = $(this);
+							var className       = $( currentField ).attr('name');
+							// Exclude in the loop field without name attribute
+							if ( typeof className === "undefined" ){
+									return;
+							}
+							// Get the QTY
+							if ( className.indexOf(qtyMeta) > -1 ){
+								var pQty = $( currentField ).val() == '' ? 0 : $( currentField ).val() ;
+								totalQTY += parseFloat( pQty );
+								currentQTY = parseFloat( pQty );
+							}
+							// Get the weight
+							if ( className.indexOf(weightMeta) > -1 ){
+								var pWeight = $( currentField ).val() == '' ? 0 : $( currentField ).val() ;
+								packageWeight += parseFloat( pWeight );
+							}
+							
+							// Calculate the volumetric                       
+							$.each( dimMeta, function( index, value ){   
+												  
+								if ( className.indexOf(value) == -1 ){
+									return;
+								}
+								currentVolumetric *= $( currentField ).val();
+							} );
+
+							// Calculate the cubicmetric                       
+							$.each( dimMeta, function( index, value ){   
+
+								if ( className.indexOf(value) == -1 ){
+									return;
+								}
+								currentCubicmetric *= $( currentField ).val();
+							} );
+						});
+						totalVolumetric += currentQTY * ( currentVolumetric / divisor );
+						totalCubicmetric += currentQTY * ( currentCubicmetric / divisor_cubic );
+						totalWeight     += currentQTY * packageWeight;
+						totalVolume		+= currentQTY * currentVolumetric;
+						totalCubic		+= currentQTY * currentCubicmetric;
+					});
+					$('#package-weight-info #total_volume_metric_output').text( totalVolume.toFixed(2) );
+					$('#package-weight-info #package_volumetric').text( totalVolumetric.toFixed(2) );
+					$('#package-weight-info #total_cubic_metric_output').text( totalCubic.toFixed(2) );
+					$('#package-weight-info #package_cubicmetric').text( totalCubicmetric.toFixed(2) );
+					$('#package-weight-info #package_actual_weight').text( totalWeight.toFixed(2) );
+					$('#package-weight-info #package_actual_koli').text( totalQTY );
+				});
+			}
+		});
+	</script>
+    <?php
+}
